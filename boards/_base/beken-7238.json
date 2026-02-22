@@ -1,0 +1,28 @@
+{
+  "build": {
+    "family": "BK7238",
+    "variant": "beken-72xx",
+    "core": "libretiny",
+    "cpu": "arm",
+    "f_cpu": "120000000L",
+    "ldscript": "bk7238.ld",
+    "bkboot_version": "3.0.78"
+  },
+
+  "upload": {
+    "maximum_size": "0x1EF000",
+    "speed": 921600
+  },
+
+  "flash": {
+    "mode": "dio",
+    "size": "2MB",
+    "partitions": {
+      "boot":   ["0x000000", "0x11000"],
+      "app":    ["0x011000", "0x109000"],
+      "ota":    ["0x11A000", "0x86000"]
+    }
+  },
+
+  "connectivity": ["wifi", "ble"]
+}
