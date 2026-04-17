@@ -1,6 +1,7 @@
 /* Copyright (c) Kuba Szczodrzyński 2026-04-16. */
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "sys_config.h"
 
@@ -34,6 +35,14 @@ int rwip_get_current_time(void) {
 
 int rwip_get_next_target_time(void) {
     return 0;
+}
+
+bool ble_thread_is_busy(void) {
+    return false;
+}
+
+bool ble_coex_pta_is_on(void) {
+    return false;
 }
 
 #endif
