@@ -56,7 +56,7 @@
     "framework-beken-bdk": {
       "type": "framework",
       "optional": true,
-      "version": "https://github.com/libretiny-eu/framework-beken-bdk#3.0.33",
+      "version": "https://github.com/libretiny-eu/framework-beken-bdk#3.0.56",
       "toolchains": {
         "any": "gccarmnoneeabi@~1.100301.0"
       },

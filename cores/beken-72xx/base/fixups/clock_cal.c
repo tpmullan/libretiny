@@ -9,6 +9,7 @@
 #include "sys_rtos.h"
 
 static CAL_TICK_T cal_tick_save;
+static UINT64 cal_time_save;
 UINT32 use_cal_net = 0;
 
 UINT32 fclk_cal_endvalue(UINT32 mode) {
@@ -33,9 +34,9 @@ static UINT32 timer_cal_init(void) {
 
 	cal_tick_save.fclk_tick = fclk;
 #if CFG_LOW_VOLTAGE_PS && (CFG_SOC_NAME == SOC_BK7252N)
-	cal_tick_save.time_us = rtc_reg_get_time_us();
+	cal_time_save = rtc_reg_get_time_us();
 #elif CFG_LOW_VOLTAGE_PS
-	cal_tick_save.time_us = cal_get_time_us();
+	cal_time_save = cal_get_time_us();
 #else
 	cal_tick_save.tmp1 = 0;
 #endif
@@ -54,9 +55,9 @@ static UINT32 timer_cal_tick(void) {
 #if CFG_LOW_VOLTAGE_PS
 	UINT64 delta_fclk = fclk_get_tick() - cal_tick_save.fclk_tick;
 #if (CFG_SOC_NAME == SOC_BK7252N)
-	UINT64 delta_time = rtc_reg_get_time_us() - cal_tick_save.time_us;
+	UINT64 delta_time = rtc_reg_get_time_us() - cal_time_save;
 #else
-	UINT64 delta_time = cal_get_time_us() - cal_tick_save.time_us;
+	UINT64 delta_time = cal_get_time_us() - cal_time_save;
 #endif
 	lost = (INT32)(delta_time / 1000 - BK_TICKS_TO_MS(delta_fclk));
 #else

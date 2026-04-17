@@ -14,8 +14,6 @@ board: PlatformBoardConfig = env.BoardConfig()
 platform: PlatformBase = env.PioPlatform()
 family: Family = env["FAMILY_OBJ"]
 
-# Parse custom options
-env.ParseCustomOptions(platform)
 # Parse custom flash layout
 env.ParseCustomFlashLayout(platform, board)
 # Add flash layout C defines

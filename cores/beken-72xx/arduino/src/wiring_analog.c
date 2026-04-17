@@ -171,12 +171,12 @@ void analogWrite(pin_size_t pinNumber, int value) {
 	float percent	   = value * 1.0 / ((1 << _analogWriteResolution) - 1);
 	uint32_t dutyCycle = percent * frequency;
 	uint32_t channel   = data->pwm.channel;
-#if CFG_SOC_NAME != SOC_BK7231N
-	data->pwm.duty_cycle = dutyCycle;
-#else
+#if (CFG_SOC_NAME == SOC_BK7231N) || (CFG_SOC_NAME == SOC_BK7238)
 	data->pwm.duty_cycle1 = dutyCycle;
 	data->pwm.duty_cycle2 = 0;
 	data->pwm.duty_cycle3 = 0;
+#else
+	data->pwm.duty_cycle = dutyCycle;
 #endif
 
 	if ((data->pwmState == LT_PWM_STOPPED) || (data->pwmState == LT_PWM_PAUSED)) {

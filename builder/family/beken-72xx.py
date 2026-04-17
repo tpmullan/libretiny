@@ -1,6 +1,7 @@
 # Copyright (c) Kuba Szczodrzyński 2022-06-13.
 
-from os.path import join
+from os import makedirs
+from os.path import dirname, join
 
 import click
 from platformio.platform.base import PlatformBase
@@ -74,6 +75,27 @@ BLE_VERSIONS = {
     BLE_VERSION_5_1: "ble_5_1",
     BLE_VERSION_5_2: "ble_5_2",
 }
+
+
+def copy_patched_bdk_source(source_path: str, target_path: str, replacements: dict):
+    source_path = env.subst(source_path)
+    target_path = env.subst(target_path)
+    with open(source_path, "r", encoding="utf-8") as f:
+        source = f.read()
+    patched = source
+    for old, new in replacements.items():
+        patched = patched.replace(old, new)
+
+    makedirs(dirname(target_path), exist_ok=True)
+    try:
+        with open(target_path, "r", encoding="utf-8") as f:
+            if f.read() == patched:
+                return
+    except FileNotFoundError:
+        pass
+    with open(target_path, "w", encoding="utf-8") as f:
+        f.write(patched)
+
 
 # Define constants used for choosing sources
 SOC = env.Cfg("CFG_SOC_NAME")
@@ -447,7 +469,7 @@ if use_wpa_wolfssl:
 # Sources - BLE version
 if env.Cfg("CFG_SUPPORT_BLE"):
     platform = (
-        "bk7238" if SOC == SOC_BK7238 else "bk7252n" if SOC == SOC_BK7252N else "7231n"
+        "7238" if SOC == SOC_BK7238 else "bk7252n" if SOC == SOC_BK7252N else "7231n"
     )
     if BDK >= (3, 0, 56):
         ble_base_dir = join(DRIVER_DIR, "ble", BLE_VERSIONS[BLE])
@@ -455,6 +477,34 @@ if env.Cfg("CFG_SUPPORT_BLE"):
         ble_base_dir = join(DRIVER_DIR, "ble")
     elif BLE == BLE_VERSION_5_1:
         ble_base_dir = join(DRIVER_DIR, "ble_5_x_rw")
+    if BLE == BLE_VERSION_5_2:
+        ble_generated_dir = join(
+            "$BUILD_DIR",
+            "generated",
+            "beken-72xx",
+            BLE_VERSIONS[BLE],
+        )
+        ble_generated_app_init = join(
+            ble_generated_dir,
+            "ble_pub",
+            "app",
+            "src",
+            "app_ble_init.c",
+        )
+        copy_patched_bdk_source(
+            join(ble_base_dir, "ble_pub", "app", "src", "app_ble_init.c"),
+            ble_generated_app_init,
+            {
+                "p_cmd->u_param.init_param.peer_addr.addr.addr": "p_cmd->u_param.init_param.peer_addr.addr",
+            },
+        )
+        queue.AddLibrary(
+            name=f"bdk_{BLE_VERSIONS[BLE]}_generated",
+            base_dir=ble_generated_dir,
+            srcs=[
+                "+<ble_pub/app/src/app_ble_init.c>",
+            ],
+        )
     queue.AddLibrary(
         name=f"bdk_{BLE_VERSIONS[BLE]}",
         base_dir=ble_base_dir,
@@ -467,6 +517,7 @@ if env.Cfg("CFG_SUPPORT_BLE"):
             BLE == BLE_VERSION_4_2 and "+<profiles/*/src/*.c>",
             # BLE 5.x
             BLE != BLE_VERSION_4_2 and "+<ble_pub/app/src/*.c>",
+            BLE == BLE_VERSION_5_2 and "-<ble_pub/app/src/app_ble_init.c>",
             BLE != BLE_VERSION_4_2 and "+<ble_pub/ui/ble_ui.c>",
             # BLE 5.1 (BK7231N, BK7236)
             BLE == BLE_VERSION_5_1 and "+<ble_pub/prf/*.c>",
@@ -510,6 +561,8 @@ if env.Cfg("CFG_SUPPORT_BLE"):
             BLE == BLE_VERSION_5_1 and "+<ble_pub/prf>",
             BLE == BLE_VERSION_5_1 and "+<ble_pub/profiles/*/api>",
             # BLE 5.2
+            BLE == BLE_VERSION_5_2
+            and "+<$CORES_DIR/beken-72xx/base/compat/ble_5_2>",
             BLE == BLE_VERSION_5_2 and "+<ble_lib/modules/rwip/import/reg>",
             BLE == BLE_VERSION_5_2 and "+<ble_pub/profiles/bas/bass/api>",
             BLE == BLE_VERSION_5_2 and "+<ble_pub/profiles/bk_comm/api>",

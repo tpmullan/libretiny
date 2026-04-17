@@ -1,6 +1,6 @@
 # Copyright (c) Kuba Szczodrzyński 2022-06-13.
 
-from os.path import isfile
+from os.path import basename, isfile
 
 from SCons.Script import DefaultEnvironment, Environment
 
@@ -63,6 +63,18 @@ def env_load_config(env: Environment, path: str):
             # store defines as bytes
             value = value.encode()
         config[key] = value
+    platform = env.PioPlatform()
+    opts = platform.custom_opts.get("options", None) or {}
+    header = basename(path).replace(".", "#")
+    if header in opts:
+        for key, value in opts[header].items():
+            if value.isnumeric():
+                config[key] = int(value, 0)
+            elif value.startswith('"') and value.endswith('"'):
+                config[key] = value[1:-1]
+            else:
+                # store defines as bytes to preserve env.Cfg() indirection
+                config[key] = value.encode()
     env.Append(
         CONFIG=config,
     )

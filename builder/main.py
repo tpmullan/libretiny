@@ -56,6 +56,8 @@ env.Replace(
 
 # Environment variables, include paths, etc.
 env.ConfigureEnvironment(platform, board)
+# Parse custom options early so family builders can see overrides via env.Cfg()
+env.ParseCustomOptions(platform)
 
 # Family builders details:
 # - call env.AddLibrary("lib name", "base dir", [sources]) to add lib sources
